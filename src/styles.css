@@ -186,12 +186,14 @@ main { padding: 0 16px 32px; }
 .step-body { margin-top: 6px; overflow-wrap: anywhere; }
 .step.collapsed .step-body { display: none; }
 .step-text, .step-note { white-space: pre-wrap; }
+.para { margin: 0; }
+.para + .para { margin-top: 6px; }
 /* Nested bullet notes from the doc: one line down the left for the block,
    plus a fainter line per deeper level */
 .step-notes {
   margin-top: 8px; padding: 2px 0 2px 12px;
   border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  display: grid; gap: 6px;
+  display: grid; gap: 12px;
   font-size: 0.95em;
 }
 .step-note[data-level='2'], .step-note[data-level='3'], .step-note[data-level='4'] {

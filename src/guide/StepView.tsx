@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { Step } from './types';
-import { FormattedText } from './FormattedText';
+import { FormattedParagraphs } from './FormattedText';
 
 const META_LABELS: Record<string, string> = {
   gp_stack: 'GP stack',
@@ -14,13 +14,13 @@ const StepBody = memo(function StepBody({ step }: { step: Step }) {
   return (
     <div className="step-body">
       <div className="step-text">
-        <FormattedText content={step.content} />
+        <FormattedParagraphs content={step.content} />
       </div>
       {!!step.nestedContent?.length && (
         <div className="step-notes">
           {step.nestedContent.map((n, i) => (
             <div key={i} className="step-note" style={{ marginLeft: `${(Math.max(n.level, 1) - 1) * 1.1}rem` }} data-level={n.level}>
-              <FormattedText content={n.content} />
+              <FormattedParagraphs content={n.content} />
             </div>
           ))}
         </div>
