@@ -58,6 +58,32 @@ function renderItem(item: ContentItem, key: number): ReactNode {
   );
 }
 
+/** Split content at line breaks into paragraphs, dropping empty ones. */
+function toParagraphs(content: ContentItem[]): ContentItem[][] {
+  const paras: ContentItem[][] = [[]];
+  for (const item of content) {
+    item.text.split('\n').forEach((part, i) => {
+      if (i > 0) paras.push([]);
+      if (part) paras[paras.length - 1].push({ ...item, text: part });
+    });
+  }
+  return paras.filter((p) => p.some((i) => i.text.trim()));
+}
+
+/** Inline rendering (titles, footnote lines). */
 export const FormattedText = memo(function FormattedText({ content }: { content: ContentItem[] }) {
   return <>{content.map(renderItem)}</>;
+});
+
+/** Block rendering: each line break in the doc becomes its own paragraph. */
+export const FormattedParagraphs = memo(function FormattedParagraphs({ content }: { content: ContentItem[] }) {
+  return (
+    <>
+      {toParagraphs(content).map((para, i) => (
+        <p key={i} className="para">
+          {para.map(renderItem)}
+        </p>
+      ))}
+    </>
+  );
 });
