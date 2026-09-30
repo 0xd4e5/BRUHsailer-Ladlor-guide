@@ -22,14 +22,14 @@ const StepBody = memo(function StepBody({ step }: { step: Step }) {
         </div>
       ))}
       {meta.length > 0 && (
-        <dl className="step-meta">
+        <div className="step-meta">
           {meta.map(([k, v]) => (
-            <div key={k}>
-              <dt>{META_LABELS[k] ?? k.replace(/_/g, ' ')}</dt>
-              <dd>{v}</dd>
+            <div key={k} className={`meta-box meta-${k}`}>
+              <div className="meta-label">{META_LABELS[k] ?? k.replace(/_/g, ' ')}</div>
+              <div className="meta-value">{v}</div>
             </div>
           ))}
-        </dl>
+        </div>
       )}
     </div>
   );

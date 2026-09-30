@@ -24,7 +24,8 @@ export default function GuideTab({ data }: Props) {
 
   // Storage keys match the original site so its localStorage can be copied across.
   const [progress, setProgress] = usePersistentState<Record<string, boolean>>('guideProgress:main', {});
-  const [prefs, setPrefs] = usePersistentState<{ minimized: boolean }>('guideFilter:main', { minimized: false });
+  // On: every completed step is hidden except the latest one, which stays as a collapsed row.
+  const [minimized, setMinimized] = usePersistentState<boolean>('guideMinimizeCompleted', true);
   const [highlights, setHighlights] = usePersistentState<Highlight[]>('userHighlights:main', []);
   const [color, setColor] = usePersistentState<HighlightColor>('highlightColor', 'yellow');
   const [highlightMode, setHighlightMode] = useState(false);
@@ -56,11 +57,6 @@ export default function GuideTab({ data }: Props) {
     return next;
   };
 
-  const onToggleStep = useCallback(
-    (id: string) => setProgress((p) => ({ ...p, [id]: !p[id] })),
-    [setProgress]
-  );
-
   // --- search ---------------------------------------------------------------
   const matches = useMemo(() => {
     if (!term) return null;
@@ -68,6 +64,37 @@ export default function GuideTab({ data }: Props) {
     for (const ch of chapters) for (const sec of ch.sections) for (const st of sec.steps) if (st.text.includes(term)) s.add(st.id);
     return s;
   }, [term, chapters]);
+
+  const location = useMemo(() => {
+    const m = new Map<string, { section: string; chapter: number }>();
+    for (const ch of chapters) for (const sec of ch.sections) for (const st of sec.steps) m.set(st.id, { section: sec.key, chapter: ch.index });
+    return m;
+  }, [chapters]);
+
+  const onToggleStep = useCallback(
+    (id: string) => {
+      const next = { ...progress, [id]: !progress[id] };
+      setProgress(next);
+      // Ticking the last step of a section: open the section holding the next unticked step.
+      if (next[id]) {
+        const nextId = stepIds.slice(stepIds.indexOf(id) + 1).find((s) => !next[s]);
+        const loc = nextId && location.get(nextId);
+        if (loc) {
+          setOpenSections((s) => new Set(s).add(loc.section));
+          setOpenChapters((s) => new Set(s).add(loc.chapter));
+        }
+      }
+    },
+    [progress, setProgress, stepIds, location]
+  );
+
+  const lastDoneId = useMemo(() => {
+    for (let i = stepIds.length - 1; i >= 0; i--) if (progress[stepIds[i]]) return stepIds[i];
+    return null;
+  }, [stepIds, progress]);
+
+  const isHidden = (id: string) =>
+    matches ? !matches.has(id) : minimized && !!progress[id] && id !== lastDoneId;
 
   useEffect(() => {
     const root = rootRef.current;
@@ -156,9 +183,10 @@ export default function GuideTab({ data }: Props) {
         </div>
         <div className="tools">
           <button
-            className={prefs.minimized ? 'on' : ''}
-            aria-pressed={prefs.minimized}
-            onClick={() => setPrefs((p) => ({ ...p, minimized: !p.minimized }))}
+            className={minimized ? 'on' : ''}
+            aria-pressed={minimized}
+            onClick={() => setMinimized((m) => !m)}
+            title="Hide completed steps, keeping only the latest one"
           >
             Minimize completed
           </button>
@@ -190,7 +218,7 @@ export default function GuideTab({ data }: Props) {
 
       <div ref={rootRef} className={`guide${highlightMode ? ' highlighting' : ''}`}>
         {chapters.map((ch) => {
-          const chVisible = !matches || ch.sections.some((s) => s.steps.some((st) => matches.has(st.id)));
+          const chVisible = ch.sections.some((s) => s.steps.some((st) => !isHidden(st.id)));
           const chOpen = openChapters.has(ch.index) || (!!matches && chVisible);
           return (
             <section key={ch.index} className={`chapter${chOpen ? ' open' : ''}`} hidden={!chVisible}>
@@ -201,7 +229,7 @@ export default function GuideTab({ data }: Props) {
               </h2>
               <div className="chapter-body">
                 {ch.sections.map((sec) => {
-                  const secVisible = !matches || sec.steps.some((st) => matches.has(st.id));
+                  const secVisible = sec.steps.some((st) => !isHidden(st.id));
                   const secOpen = openSections.has(sec.key) || (!!matches && secVisible);
                   return (
                     <div key={sec.key} className={`section${secOpen ? ' open' : ''}`} hidden={!secVisible}>
@@ -220,8 +248,8 @@ export default function GuideTab({ data }: Props) {
                               stepId={st.id}
                               number={st.number}
                               done={done}
-                              collapsed={done && prefs.minimized && !matches}
-                              hidden={!!matches && !matches.has(st.id)}
+                              collapsed={done && minimized && !matches}
+                              hidden={isHidden(st.id)}
                               onToggle={onToggleStep}
                             />
                           );

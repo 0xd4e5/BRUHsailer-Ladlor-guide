@@ -187,10 +187,17 @@ main { padding: 0 16px 64px; }
 .step.collapsed .step-body { display: none; }
 .step-text, .step-nested { white-space: pre-wrap; }
 .step-nested { margin-top: 2px; }
-.step-meta { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 8px 0 0; font-size: 0.85rem; color: var(--muted); }
-.step-meta div { display: flex; gap: 6px; }
-.step-meta dt { font-weight: 600; }
-.step-meta dd { margin: 0; color: var(--text); }
+.step-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.meta-box {
+  padding: 6px 10px; border-radius: 6px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+  font-size: 0.875rem; min-width: 0;
+}
+.meta-gp_stack { flex: 0 0 auto; }
+.meta-items_needed { flex: 1 1 240px; }
+.meta-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.meta-value { color: var(--text); }
 
 /* Colours from the Google Doc, lightened in dark mode for contrast */
 .tc { color: color-mix(in srgb, var(--c) var(--tc-mix), white); }
