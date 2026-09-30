@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import GuideTab, { type Variant } from './guide/GuideTab';
+import GuideTab from './guide/GuideTab';
 import type { GuideData } from './guide/types';
 import ProgressionTab, { type LadlorData, type MilestoneMeta } from './progression/ProgressionTab';
 import { fetchWithFallback, GUIDE_RAW, LADLOR_RAW, useAsync } from './remote';
@@ -9,7 +9,6 @@ type Tab = 'guide' | 'progression';
 type Theme = 'auto' | 'light' | 'dark';
 
 const GUIDE_DOC = 'https://docs.google.com/document/d/1CBkFM70SnrW4hJXvHM2F1fYCuBF_fRnEXnTYgRnRkAE';
-const GUIDE_FILE: Record<Variant, string> = { main: 'guide_data.json', landlubber: 'guide_data_landlubber.json' };
 
 const tabFromHash = (): Tab => (location.hash === '#progression' ? 'progression' : 'guide');
 
@@ -30,7 +29,6 @@ function loadLadlor(): Promise<LadlorData> {
 export default function App() {
   const [tab, setTab] = useState<Tab>(tabFromHash);
   const [theme, setTheme] = usePersistentState<Theme>('theme', 'auto');
-  const [variant, setVariant] = usePersistentState<Variant>('guideVariant', 'main');
 
   useEffect(() => {
     const onHash = () => setTab(tabFromHash());
@@ -43,15 +41,11 @@ export default function App() {
     else document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  // Tagged with its variant so a stale result is never rendered under the new one.
   const guide = useAsync(
-    () =>
-      fetchWithFallback<GuideData>(`${GUIDE_RAW}/${GUIDE_FILE[variant]}`, `data/${GUIDE_FILE[variant]}`).then(
-        (data) => ({ variant, data })
-      ),
-    [variant]
+    () => fetchWithFallback<GuideData>(`${GUIDE_RAW}/guide_data.json`, 'data/guide_data.json'),
+    []
   );
-  const guideData = guide.data?.variant === variant ? guide.data.data : null;
+  const guideData = guide.data;
   // Only fetched once the Progression tab is first opened.
   const [ladlorWanted, setLadlorWanted] = useState(tab === 'progression');
   useEffect(() => {
@@ -101,7 +95,7 @@ export default function App() {
         <div hidden={tab !== 'guide'}>
           {guide.error && <p className="status error">Couldn't load the guide: {guide.error}</p>}
           {!guideData && !guide.error && <p className="status">Loading guide…</p>}
-          {guideData && <GuideTab key={variant} data={guideData} variant={variant} onVariantChange={setVariant} />}
+          {guideData && <GuideTab data={guideData} />}
         </div>
         <div hidden={tab !== 'progression'}>
           <p className="chart-credit">

@@ -7,7 +7,6 @@ const LADLOR = 'https://raw.githubusercontent.com/Madssb/InteractiveGearProg/mai
 
 const files = [
   [`${GUIDE}/guide_data.json`, 'public/data/guide_data.json'],
-  [`${GUIDE}/guide_data_landlubber.json`, 'public/data/guide_data_landlubber.json'],
   [`${LADLOR}/logic/milestone-sequence-main.json`, 'public/data/ladlor/milestone-sequence-main.json'],
   [`${LADLOR}/logic/milestone-sequence-retirement.json`, 'public/data/ladlor/milestone-sequence-retirement.json'],
   [`${LADLOR}/generated/milestone-metadata.json`, 'public/data/ladlor/milestone-metadata.json'],

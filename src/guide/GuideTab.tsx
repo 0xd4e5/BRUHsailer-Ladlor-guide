@@ -6,12 +6,8 @@ import { buildModel } from './model';
 import { StepView } from './StepView';
 import { HIGHLIGHT_COLORS, type GuideData, type Highlight, type HighlightColor } from './types';
 
-export type Variant = 'main' | 'landlubber';
-
 interface Props {
   data: GuideData;
-  variant: Variant;
-  onVariantChange: (v: Variant) => void;
 }
 
 function useDebounced<T>(value: T, ms: number): T {
@@ -23,13 +19,13 @@ function useDebounced<T>(value: T, ms: number): T {
   return v;
 }
 
-export default function GuideTab({ data, variant, onVariantChange }: Props) {
+export default function GuideTab({ data }: Props) {
   const { chapters, stepIds } = useMemo(() => buildModel(data), [data]);
 
   // Storage keys match the original site so its localStorage can be copied across.
-  const [progress, setProgress] = usePersistentState<Record<string, boolean>>(`guideProgress:${variant}`, {});
-  const [prefs, setPrefs] = usePersistentState<{ minimized: boolean }>(`guideFilter:${variant}`, { minimized: false });
-  const [highlights, setHighlights] = usePersistentState<Highlight[]>(`userHighlights:${variant}`, []);
+  const [progress, setProgress] = usePersistentState<Record<string, boolean>>('guideProgress:main', {});
+  const [prefs, setPrefs] = usePersistentState<{ minimized: boolean }>('guideFilter:main', { minimized: false });
+  const [highlights, setHighlights] = usePersistentState<Highlight[]>('userHighlights:main', []);
   const [color, setColor] = usePersistentState<HighlightColor>('highlightColor', 'yellow');
   const [highlightMode, setHighlightMode] = useState(false);
   const [query, setQuery] = useState('');
@@ -135,7 +131,7 @@ export default function GuideTab({ data, variant, onVariantChange }: Props) {
   };
 
   const resetProgress = () => {
-    if (!window.confirm(`Reset all progress for the ${variant === 'main' ? 'main' : 'Landlubber'} guide?`)) return;
+    if (!window.confirm('Reset all guide progress?')) return;
     setProgress({});
   };
 
@@ -159,10 +155,6 @@ export default function GuideTab({ data, variant, onVariantChange }: Props) {
           )}
         </div>
         <div className="tools">
-          <select value={variant} onChange={(e) => onVariantChange(e.target.value as Variant)} aria-label="Guide version">
-            <option value="main">Main guide</option>
-            <option value="landlubber">Landlubber</option>
-          </select>
           <button
             className={prefs.minimized ? 'on' : ''}
             aria-pressed={prefs.minimized}
