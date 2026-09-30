@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Backup from './Backup';
 import GuideTab from './guide/GuideTab';
 import type { GuideData } from './guide/types';
 import ProgressionTab, { type LadlorData, type MilestoneMeta } from './progression/ProgressionTab';
@@ -107,6 +108,7 @@ export default function App() {
           {ladlor.data && <ProgressionTab data={ladlor.data} />}
         </div>
       </main>
+      <Backup />
     </>
   );
 }

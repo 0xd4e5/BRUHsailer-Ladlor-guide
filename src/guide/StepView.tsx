@@ -16,11 +16,15 @@ const StepBody = memo(function StepBody({ step }: { step: Step }) {
       <div className="step-text">
         <FormattedText content={step.content} />
       </div>
-      {step.nestedContent?.map((n, i) => (
-        <div key={i} className="step-nested" style={{ marginLeft: `${n.level * 1.25}rem` }}>
-          <FormattedText content={n.content} />
+      {!!step.nestedContent?.length && (
+        <div className="step-notes">
+          {step.nestedContent.map((n, i) => (
+            <div key={i} className="step-note" style={{ marginLeft: `${(Math.max(n.level, 1) - 1) * 1.1}rem` }} data-level={n.level}>
+              <FormattedText content={n.content} />
+            </div>
+          ))}
         </div>
-      ))}
+      )}
       {meta.length > 0 && (
         <div className="step-meta">
           {meta.map(([k, v]) => (

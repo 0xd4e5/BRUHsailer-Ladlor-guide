@@ -85,7 +85,7 @@ a { color: var(--accent); }
 button, input, select { font: inherit; color: inherit; }
 
 main, .banner, .tabs > * { max-width: 960px; margin-inline: auto; }
-main { padding: 0 16px 64px; }
+main { padding: 0 16px 32px; }
 
 /* --- banner ------------------------------------------------------------ */
 .banner { padding: 28px 16px 16px; text-align: center; }
@@ -185,8 +185,20 @@ main { padding: 0 16px 64px; }
 .step-time { font-size: 0.8rem; color: var(--muted); }
 .step-body { margin-top: 6px; overflow-wrap: anywhere; }
 .step.collapsed .step-body { display: none; }
-.step-text, .step-nested { white-space: pre-wrap; }
-.step-nested { margin-top: 2px; }
+.step-text, .step-note { white-space: pre-wrap; }
+/* Nested bullet notes from the doc: one line down the left for the block,
+   plus a fainter line per deeper level */
+.step-notes {
+  margin-top: 8px; padding: 2px 0 2px 12px;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  display: grid; gap: 6px;
+  font-size: 0.95em;
+}
+.step-note[data-level='2'], .step-note[data-level='3'], .step-note[data-level='4'] {
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--text) 15%, transparent);
+  color: color-mix(in srgb, var(--text) 85%, var(--muted));
+}
 .step-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .meta-box {
   padding: 6px 10px; border-radius: 6px;
@@ -244,6 +256,23 @@ mark.search-hit { background: var(--search); color: inherit; border-radius: 2px;
   content: ''; position: absolute; right: -1px; top: -4px;
   border: 5px solid transparent; border-left-color: var(--muted); border-right: 0;
 }
+
+/* --- footer / backup -------------------------------------------------- */
+.site-footer { max-width: 960px; margin: 0 auto; padding: 16px 16px 40px; border-top: 1px solid var(--border); }
+.footer-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.footer-actions button {
+  padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; font-size: 0.875rem;
+}
+.footer-actions button:disabled { opacity: 0.5; cursor: default; }
+.backup-panel { margin-top: 12px; }
+.backup-panel p { margin: 0 0 8px; color: var(--muted); font-size: 0.9rem; }
+.backup-panel textarea {
+  width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); font: 0.8rem/1.4 ui-monospace, monospace; resize: vertical;
+  word-break: break-all; margin-bottom: 8px;
+}
+.backup-panel .backup-msg { margin-top: 8px; color: var(--text); }
 
 @media (max-width: 600px) {
   .banner h1 { font-size: 1.6rem; }
