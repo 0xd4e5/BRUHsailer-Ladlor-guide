@@ -4,7 +4,7 @@ A personal, stripped-down web version of the **BRUHsailer** ironman guide with
 **Ladlor's gear progression chart** in a second tab.
 
 - **Guide** tab: step checklist, search, minimize completed, highlight / remove
-  highlights, reset progress, Main / Landlubber guide versions.
+  highlights, reset progress.
 - **Progression** tab: Ladlor's chart — click an item to mark it obtained,
   right-click for its wiki page. Optional "Retirement home" section.
 - Light / Dark / Auto (system) theme.
