@@ -49,13 +49,30 @@ export function clearHighlights(root: HTMLElement) {
   root.querySelectorAll('.hl').forEach(unwrap);
 }
 
-function wrap(node: Text, start: number, end: number, color: HighlightColor) {
+function wrap(node: Text, start: number, end: number, color: HighlightColor, group: string) {
   const range = document.createRange();
   range.setStart(node, start);
   range.setEnd(node, end);
   const span = document.createElement('span');
   span.className = `hl hl-${color}`;
+  span.dataset.hl = group;
   range.surroundContents(span);
+}
+
+const newGroup = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+/**
+ * Highlights saved before groups existed: one selection was stored as several
+ * entries in a row (same step, same colour). Give each such run one group.
+ */
+export function withGroups(highlights: Highlight[]): Highlight[] {
+  let run = 0;
+  return highlights.map((h, i) => {
+    if (h.group) return h;
+    const prev = highlights[i - 1];
+    if (!prev || prev.group || prev.parentId !== h.parentId || prev.color !== h.color) run++;
+    return { ...h, group: `legacy-${run}` };
+  });
 }
 
 export function applyHighlights(root: HTMLElement, highlights: Highlight[]) {
@@ -67,7 +84,7 @@ export function applyHighlights(root: HTMLElement, highlights: Highlight[]) {
       if (node.parentElement?.classList.contains('hl')) continue;
       const idx = node.nodeValue?.indexOf(h.htmlContent) ?? -1;
       if (idx === -1) continue;
-      wrap(node, idx, idx + h.htmlContent.length, h.color);
+      wrap(node, idx, idx + h.htmlContent.length, h.color, h.group ?? newGroup());
       break;
     }
   }
@@ -78,7 +95,8 @@ export function collectHighlights(root: HTMLElement): Highlight[] {
   root.querySelectorAll<HTMLElement>('.hl').forEach((span) => {
     const step = span.closest('.step');
     const color = [...span.classList].find((c) => c.startsWith('hl-'))?.slice(3) as HighlightColor;
-    if (step?.id && span.textContent) out.push({ parentId: step.id, htmlContent: span.textContent, color });
+    if (step?.id && span.textContent)
+      out.push({ parentId: step.id, htmlContent: span.textContent, color, group: span.dataset.hl });
   });
   return out;
 }
@@ -94,15 +112,18 @@ export function highlightSelection(root: HTMLElement, color: HighlightColor): bo
   if (!body || !root.contains(body)) return false;
 
   const hit = textNodes(body).filter((t) => range.intersectsNode(t));
+  const group = newGroup();
   let changed = false;
   for (const t of hit) {
     const start = t === range.startContainer ? range.startOffset : 0;
     const end = t === range.endContainer ? range.endOffset : (t.nodeValue ?? '').length;
     if (start >= end || !(t.nodeValue ?? '').slice(start, end).trim()) continue;
     // Re-colour instead of nesting when the text is already highlighted.
-    const existing = t.parentElement?.closest('.hl');
-    if (existing) existing.className = `hl hl-${color}`;
-    else wrap(t, start, end, color);
+    const existing = t.parentElement?.closest<HTMLElement>('.hl');
+    if (existing) {
+      existing.className = `hl hl-${color}`;
+      existing.dataset.hl = group;
+    } else wrap(t, start, end, color, group);
     changed = true;
   }
   sel.removeAllRanges();
@@ -111,9 +132,14 @@ export function highlightSelection(root: HTMLElement, color: HighlightColor): bo
 }
 
 function mergeAdjacent(body: Element) {
-  body.querySelectorAll('.hl').forEach((span) => {
+  body.querySelectorAll<HTMLElement>('.hl').forEach((span) => {
     let next = span.nextSibling;
-    while (next instanceof HTMLElement && next.classList.contains('hl') && next.className === span.className) {
+    while (
+      next instanceof HTMLElement &&
+      next.classList.contains('hl') &&
+      next.className === span.className &&
+      next.dataset.hl === span.dataset.hl
+    ) {
       span.textContent = (span.textContent ?? '') + (next.textContent ?? '');
       const rm = next;
       next = next.nextSibling;
@@ -122,9 +148,13 @@ function mergeAdjacent(body: Element) {
   });
 }
 
+/** Remove the whole highlight (every piece of its selection) under the click. */
 export function removeHighlightAt(target: EventTarget | null): boolean {
-  const span = target instanceof Element ? target.closest('.hl') : null;
+  const span = target instanceof HTMLElement ? target.closest<HTMLElement>('.hl') : null;
   if (!span) return false;
-  unwrap(span);
+  const group = span.dataset.hl;
+  const scope = span.closest('.step') ?? span.parentElement;
+  const pieces = group && scope ? [...scope.querySelectorAll<HTMLElement>('.hl')].filter((s) => s.dataset.hl === group) : [span];
+  pieces.forEach(unwrap);
   return true;
 }

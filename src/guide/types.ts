@@ -41,4 +41,5 @@ export interface Highlight {
   parentId: string; // e.g. "step-1-4"
   htmlContent: string; // highlighted text
   color: HighlightColor;
+  group?: string; // all pieces of one selection share a group, so they're removed together
 }

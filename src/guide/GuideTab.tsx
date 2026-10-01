@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePersistentState } from '../storage';
-import { applyHighlights, clearHighlights, clearSearchMarks, collectHighlights, highlightSelection, markSearchTerm, removeHighlightAt } from './dom';
+import { applyHighlights, clearHighlights, clearSearchMarks, collectHighlights, highlightSelection, markSearchTerm, removeHighlightAt, withGroups } from './dom';
 import { FormattedText } from './FormattedText';
 import { buildModel } from './model';
 import { StepView } from './StepView';
@@ -125,7 +125,12 @@ export default function GuideTab({ data }: Props) {
 
   // --- highlights -----------------------------------------------------------
   useEffect(() => {
-    if (rootRef.current) applyHighlights(rootRef.current, highlights);
+    if (!rootRef.current) return;
+    // Older saves have no groups; add them (without dropping anything that
+    // can't currently be placed, e.g. after an upstream text change).
+    const grouped = withGroups(highlights);
+    applyHighlights(rootRef.current, grouped);
+    if (grouped.some((h, i) => h !== highlights[i])) setHighlights(grouped);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
