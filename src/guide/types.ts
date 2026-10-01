@@ -42,4 +42,5 @@ export interface Highlight {
   htmlContent: string; // highlighted text
   color: HighlightColor;
   group?: string; // all pieces of one selection share a group, so they're removed together
+  start?: number; // character offset within the step body, so short text is restored in the right place
 }

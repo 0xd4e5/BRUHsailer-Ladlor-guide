@@ -75,28 +75,72 @@ export function withGroups(highlights: Highlight[]): Highlight[] {
   });
 }
 
+/** Character offset of the start of `node` within `body`'s text. */
+function offsetOf(body: Node, node: Node): number {
+  const r = document.createRange();
+  r.setStart(body, 0);
+  r.setEndBefore(node);
+  return r.toString().length;
+}
+
+/** Wrap the text between two character offsets of `body` (may span several text nodes). */
+function wrapOffsets(body: Element, start: number, end: number, color: HighlightColor, group: string) {
+  const parts: [Text, number, number][] = [];
+  let acc = 0;
+  for (const node of textNodes(body)) {
+    const len = node.length;
+    const s = Math.max(start, acc);
+    const e = Math.min(end, acc + len);
+    if (s < e) parts.push([node, s - acc, e - acc]);
+    acc += len;
+    if (acc >= end) break;
+  }
+  for (const [node, s, e] of parts) wrap(node, s, e, color, group);
+}
+
 export function applyHighlights(root: HTMLElement, highlights: Highlight[]) {
   clearHighlights(root);
+  // Where the previous piece of each group ended, for the text-search fallback.
+  const groupEnd = new Map<string, number>();
   for (const h of highlights) {
-    const stepEl = root.querySelector(`#${CSS.escape(h.parentId)} .step-body`);
-    if (!stepEl || !h.htmlContent) continue;
-    for (const node of textNodes(stepEl)) {
-      if (node.parentElement?.classList.contains('hl')) continue;
-      const idx = node.nodeValue?.indexOf(h.htmlContent) ?? -1;
-      if (idx === -1) continue;
-      wrap(node, idx, idx + h.htmlContent.length, h.color, h.group ?? newGroup());
-      break;
+    const body = root.querySelector(`#${CSS.escape(h.parentId)} .step-body`);
+    if (!body || !h.htmlContent) continue;
+    const group = h.group ?? newGroup();
+    const text = body.textContent ?? '';
+    let start = h.start ?? -1;
+    // Saved position no longer matches (older save, or the guide text changed): search instead.
+    if (text.slice(start, start + h.htmlContent.length) !== h.htmlContent) {
+      start = text.indexOf(h.htmlContent, groupEnd.get(group) ?? 0);
+      if (start === -1) start = text.indexOf(h.htmlContent);
+      if (start === -1) continue;
     }
+    wrapOffsets(body, start, start + h.htmlContent.length, h.color, group);
+    groupEnd.set(group, start + h.htmlContent.length);
   }
 }
 
+/** Read highlights back from the page; touching pieces of one selection are saved as one entry. */
 export function collectHighlights(root: HTMLElement): Highlight[] {
   const out: Highlight[] = [];
   root.querySelectorAll<HTMLElement>('.hl').forEach((span) => {
     const step = span.closest('.step');
+    const body = span.closest('.step-body');
+    const text = span.textContent ?? '';
+    if (!step?.id || !body || !text) return;
     const color = [...span.classList].find((c) => c.startsWith('hl-'))?.slice(3) as HighlightColor;
-    if (step?.id && span.textContent)
-      out.push({ parentId: step.id, htmlContent: span.textContent, color, group: span.dataset.hl });
+    const start = offsetOf(body, span);
+    const prev = out[out.length - 1];
+    if (
+      prev &&
+      prev.parentId === step.id &&
+      prev.group === span.dataset.hl &&
+      prev.color === color &&
+      prev.start! + prev.htmlContent.length === start
+    ) {
+      prev.htmlContent += text;
+    } else {
+      out.push({ parentId: step.id, htmlContent: text, color, group: span.dataset.hl, start });
+    }
   });
   return out;
 }
